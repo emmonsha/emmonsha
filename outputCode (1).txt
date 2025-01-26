@@ -1,0 +1,148 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <ncurses.h>
+#include <stdbool.h>
+#include <time.h>
+#include <unistd.h>
+
+typedef enum {
+    Start,
+    Pause,
+    Terminate,
+    Left,
+    Right,
+    Up,
+    Down,
+    Action
+} UserAction_t;
+
+typedef struct {
+    int **field;
+    int **next;
+    int score;
+    int high_score;
+    int level;
+    int speed;
+    int pause;
+} GameInfo_t;
+
+void userInput(UserAction_t action, bool hold);
+GameInfo_t updateCurrentState(GameInfo_t gameInfo);
+void renderField(GameInfo_t gameInfo);
+void initializeGame(GameInfo_t *gameInfo);
+void cleanupGame(GameInfo_t *gameInfo);
+void gameLoop(GameInfo_t *gameInfo);
+
+int main() {
+    GameInfo_t gameInfo;
+    initializeGame(&gameInfo);
+    gameLoop(&gameInfo);
+    cleanupGame(&gameInfo);
+    return 0;
+}
+
+void initializeGame(GameInfo_t *gameInfo) {
+    initscr();
+    cbreak();
+    noecho();
+    keypad(stdscr, TRUE);
+    nodelay(stdscr, TRUE);
+    curs_set(0);
+    
+    gameInfo->score = 0;
+    gameInfo->high_score = 0;
+    gameInfo->level = 1;
+    gameInfo->speed = 100;
+    gameInfo->pause = 0;
+
+    gameInfo->field = (int **)malloc(20 * sizeof(int *));
+    for (int i = 0; i < 20; i++) {
+        gameInfo->field[i] = (int *)calloc(10, sizeof(int));
+    }
+}
+
+void cleanupGame(GameInfo_t *gameInfo) {
+    for (int i = 0; i < 20; i++) {
+        free(gameInfo->field[i]);
+    }
+    free(gameInfo->field);
+    endwin();
+}
+
+void renderField(GameInfo_t gameInfo) {
+    clear();
+    for (int y = 0; y < 20; y++) {
+        for (int x = 0; x < 10; x++) {
+            if (gameInfo.field[y][x] == 1) {
+                mvprintw(y, x, "#");
+            } else {
+                mvprintw(y, x, " ");
+            }
+        }
+    }
+    mvprintw(22, 0, "Score: %d", gameInfo.score);
+    mvprintw(23, 0, "High Score: %d", gameInfo.high_score);
+    refresh();
+}
+
+GameInfo_t updateCurrentState(GameInfo_t gameInfo) {
+    // Update gameInfo based on game logic (e.g., moving pieces, clearing lines)
+    // This is a placeholder for the actual game logic
+    return gameInfo;
+}
+
+void userInput(UserAction_t action, bool hold) {
+    // Handle user input and update game state accordingly
+    GameInfo_t *gameInfo; // Assuming gameInfo is accessible here
+    switch (action) {
+        case Left:
+            // Move left logic
+            break;
+        case Right:
+            // Move right logic
+            break;
+        case Up:
+            // Rotate piece logic
+            break;
+        case Down:
+            // Move down logic
+            break;
+        case Action:
+            // Perform action logic
+            break;
+        default:
+            break;
+    }
+}
+
+void gameLoop(GameInfo_t *gameInfo) {
+    while (true) {
+        int ch = getch();
+        if (ch == 'q') break; // Quit the game
+        UserAction_t action = Start; // Default action
+        bool hold = false;
+
+        switch (ch) {
+            case KEY_LEFT:
+                action = Left;
+                break;
+            case KEY_RIGHT:
+                action = Right;
+                break;
+            case KEY_UP:
+                action = Up;
+                break;
+            case KEY_DOWN:
+                action = Down;
+                break;
+            case ' ':
+                action = Action;
+                break;
+        }
+
+        userInput(action, hold);
+        *gameInfo = updateCurrentState(*gameInfo);
+        renderField(*gameInfo);
+        usleep(gameInfo->speed * 1000);
+    }
+}
